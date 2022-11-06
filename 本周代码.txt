@@ -1,0 +1,349 @@
+
+class UnionFind {
+private:
+    vector<int> parent;
+
+public:
+    UnionFind() {
+        parent.resize(26);
+        iota(parent.begin(), parent.end(), 0);
+    }
+
+    int find(int index) {
+        if (index == parent[index]) {
+            return index;
+        }
+        parent[index] = find(parent[index]);
+        return parent[index];
+    }
+
+    void unite(int index1, int index2) {
+        parent[find(index1)] = find(index2);
+    }
+};
+
+class Solution {
+public:
+    bool equationsPossible(vector<string>& equations) {
+        UnionFind uf;
+        for (const string& str: equations) {
+            if (str[1] == '=') {
+                int index1 = str[0] - 'a';
+                int index2 = str[3] - 'a';
+                uf.unite(index1, index2);
+            }
+        }
+        for (const string& str: equations) {
+            if (str[1] == '!') {
+                int index1 = str[0] - 'a';
+                int index2 = str[3] - 'a';
+                if (uf.find(index1) == uf.find(index2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+};
+
+
+
+
+class Solution {
+public:
+    int findf(vector<int>& f, vector<double>& w, int x) {
+        if (f[x] != x) {
+            int father = findf(f, w, f[x]);
+            w[x] = w[x] * w[f[x]];
+            f[x] = father;
+        }
+        return f[x];
+    }
+
+    void merge(vector<int>& f, vector<double>& w, int x, int y, double val) {
+        int fx = findf(f, w, x);
+        int fy = findf(f, w, y);
+        f[fx] = fy;
+        w[fx] = val * w[y] / w[x];
+    }
+
+    vector<double> calcEquation(vector<vector<string>>& equations, vector<double>& values, vector<vector<string>>& queries) {
+        int nvars = 0;
+        unordered_map<string, int> variables;
+
+        int n = equations.size();
+        for (int i = 0; i < n; i++) {
+            if (variables.find(equations[i][0]) == variables.end()) {
+                variables[equations[i][0]] = nvars++;
+            }
+            if (variables.find(equations[i][1]) == variables.end()) {
+                variables[equations[i][1]] = nvars++;
+            }
+        }
+        vector<int> f(nvars);
+        vector<double> w(nvars, 1.0);
+        for (int i = 0; i < nvars; i++) {
+            f[i] = i;
+        }
+
+        for (int i = 0; i < n; i++) {
+            int va = variables[equations[i][0]], vb = variables[equations[i][1]];
+            merge(f, w, va, vb, values[i]);
+        }
+        vector<double> ret;
+        for (const auto& q: queries) {
+            double result = -1.0;
+            if (variables.find(q[0]) != variables.end() && variables.find(q[1]) != variables.end()) {
+                int ia = variables[q[0]], ib = variables[q[1]];
+                int fa = findf(f, w, ia), fb = findf(f, w, ib);
+                if (fa == fb) {
+                    result = w[ia] / w[ib];
+                }
+            }
+            ret.push_back(result);
+        }
+        return ret;
+    }
+};
+
+
+
+
+class Solution {
+public:
+    static constexpr int MAX_N = 300 * 300 + 5;
+    static constexpr int patterns[7] = {0, 0b1010, 0b0101, 0b1100, 0b0110, 0b1001, 0b0011};
+    static constexpr int dirs[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+
+    struct DisjointSet {
+        int f[MAX_N];
+        
+        DisjointSet() {
+            for (int i = 0; i < MAX_N; ++i) f[i] = i;
+        }
+        
+        int find(int x) {
+            return x == f[x] ? x : f[x] = find(f[x]);
+        }
+        
+        void merge(int x, int y) {
+            f[find(x)] = find(y);
+        }
+    } ds;
+    
+    bool hasValidPath(vector<vector<int>>& grid) {
+        int m = grid.size(), n = grid[0].size();
+        
+        auto getId = [&] (int x, int y) {
+            return x * n + y;
+        };
+
+        auto handler = [&] (int x, int y) {
+            int pattern = patterns[grid[x][y]];
+            for (int i = 0; i < 4; ++i) {
+                if (pattern & (1 << i)) {
+                    int sx = x + dirs[i][0];
+                    int sy = y + dirs[i][1];
+                    if (sx >= 0 && sx < m && sy >= 0 && sy < n and (patterns[grid[sx][sy]] & (1 << ((i + 2) % 4)))) {
+                        ds.merge(getId(x, y), getId(sx, sy));
+                    }
+                }
+            }
+        };
+        
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                handler(i, j);
+            }
+        }
+
+        return ds.find(getId(0, 0)) == ds.find(getId(m - 1, n - 1));
+    }
+};
+
+
+
+class Solution {
+public:
+    vector<int> map;
+    bool validPath(const int n, const vector<vector<int>>& edges,
+                   const int source, const int destination) {
+        map = vector<int>(n, 0);
+        iota(map.begin(), map.end(), 0);
+        for (const auto& v : edges) {
+            if (v[0] < v[1])
+                unite(v[0], v[1]);
+            else
+                unite(v[1], v[0]);
+        }
+        return find(source) == find(destination);
+    }
+    void unite(const int a, const int b) { map[find(a)] = find(b); }
+    int find(const int a) {
+        if (map[a] == a) {
+            return a;
+        }
+        map[a] = find(map[a]);
+        return map[a];
+    }
+};
+
+
+
+
+class Solution {
+public:
+    string ans;
+    string interpret(string command) {
+        for (int i = 0; command[i]; i ++) {
+            if (command[i] == 'G') ans += 'G';
+            else {
+                i ++;
+                if (command[i] == ')') ans += 'o';
+                else {
+                    ans += "al";
+                    i += 2;
+                }
+            }
+        }
+        return ans;
+    }
+};
+
+
+
+
+
+class Solution {
+public:
+    string removeDuplicateLetters(string s) {
+        int last[28] = {0, }, tt = -1, n = s.size();
+        bool in[28] = {false, };
+        char stk[28];
+        for (int i = 0; i < n; i ++) {
+            last[s[i] - 'a'] ++;
+        }
+        for (int i = 0; i < n; i ++) {
+            char c = s[i];
+            last[s[i] - 'a'] --;
+            if (in[c - 'a']) {
+                
+                continue;
+            }
+            while (tt >= 0 && c < stk[tt] && last[stk[tt] - 'a']) {
+                in[stk[tt] - 'a'] = false;
+                tt --;
+            }
+            stk[++ tt] = s[i];
+            in[s[i] - 'a'] = true;
+        }
+        string ans;
+        int i = 0;
+        while (i <= tt) ans += stk[i ++];
+        return ans;
+    }
+};
+
+
+
+
+
+class Solution {
+public:
+    int find(vector<int>& preorder, int l, int r, int middle) {
+        int mid = l;
+        while (l < r) {
+            mid =( l + r + 1 )>> 1;
+            if (preorder[mid] > middle) r = mid - 1;
+            if (preorder[mid] < middle) l = mid;
+        }
+        return l;
+    }
+    TreeNode* build_tree(vector<int>& preorder, int l, int r) {
+        if (l > r) return nullptr;
+        if (l == r) return new TreeNode(preorder[l]);
+        int mid = l;
+        if (preorder[l + 1] < preorder[l]) mid = find(preorder, l + 1, r, preorder[l]);
+        return new TreeNode(preorder[l], build_tree(preorder, l + 1, mid), build_tree(preorder, mid + 1, r));
+    }
+    TreeNode* bstFromPreorder(vector<int>& preorder) {
+        return build_tree(preorder, 0, preorder.size() - 1);
+    }
+};
+
+
+
+
+
+class Solution {
+public:
+    TreeNode* constructMaximumBinaryTree(vector<int>& nums) {
+        TreeNode* stk[1002], *rp = nullptr;
+        int tt = -1, n = nums.size();
+        for (int i = 0; i < n; i ++) stk[i] = nullptr;
+        stk[++ tt] = new TreeNode(nums[0]);
+        for (int i = 1; i < n; i ++) {
+            while (tt >= 0 && nums[i] > stk[tt] -> val) {
+                tt --;
+            }
+            if (tt >= 0) rp = stk[tt] -> right;
+            else rp = stk[0];
+            stk[++ tt] = new TreeNode(nums[i], rp, nullptr);
+            if (tt > 0) stk[tt - 1] -> right = stk[tt];
+        }
+        return stk[0];
+    }
+};
+
+
+
+
+
+
+class Solution {
+public:
+    int reachNumber(int target) {
+        int n = 0, sum = 0;
+        target = abs(target);
+        while (sum < target) {
+            sum += ++n;
+        }
+        if ((sum - target) % 2 == 0) return n;
+        if ((sum + ++n - target) % 2 == 0) return n;
+        return n + 1;
+    }
+};
+
+
+
+
+
+class Solution {
+public:
+    vector<vector<string>> ans;
+    vector<string> aa;
+    bool c[10], a[20], b[20];
+    void dfs(int n, int d) {
+        if (n == d) {
+            ans.push_back(aa);
+            return;
+        }
+        for (int i = 0; i < n; i ++) {
+            if (!c[i] && !a[i + d] && !b[i - d + 10]) {
+                aa[d][i] = 'Q';
+                c[i] = a[i + d] = b[i - d + 10] = true;
+                dfs(n, d + 1);
+                aa[d][i] = '.';
+                c[i] = a[i + d] = b[i - d + 10] = false;
+            }
+        }
+    }
+    vector<vector<string>> solveNQueens(int n) {
+        for (int i = 0; i < n; i ++) {
+            aa.push_back({});
+            for (int i = 0; i < n; i ++) aa.back() += '.';
+        }
+        dfs(n, 0);
+        return ans;
+    }
+};
